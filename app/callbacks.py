@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from gmqtt import Client
 
@@ -13,16 +14,20 @@ def on_disconnect(client: Client, packet, exc=None) -> None:
     logging.info("[DISCONNECTED {}]".format(client._client_id))
 
 
-def on_subscribe(client, mid, qos, properties) -> None:
+def on_subscribe(client: Client, mid, qos: int, properties) -> None:
     logging.info("[SUBSCRIBED {}] QOS: {}".format(client._client_id, qos))
 
 
-def on_message(client: Client, topic, payload, qos, properties) -> None:
+async def on_message(
+    client: Client, topic: str, payload: Any, qos: int, properties
+) -> None:
     logging.info(
         "[RECV MSG {}] TOPIC: {} PAYLOAD: {} QOS: {} PROPERTIES: {}".format(
             client._client_id, topic, payload, qos, properties
         )
     )
+
+    return 0
 
 
 def assign_callbacks_to_client(client: Client) -> None:

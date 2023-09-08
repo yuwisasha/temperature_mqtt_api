@@ -5,6 +5,11 @@ ENV PYTHONUNBUFFERED 1
 
 WORKDIR /app/
 
+RUN apt-get update && \
+    apt-get install -y openssl
+
+COPY generate-certificate.sh /tmp/generate-certificate.sh
+
 RUN curl -sSL https://install.python-poetry.org | POETRY_HOME=/etc/poetry python3 - && \
     cd /usr/local/bin && \
     ln -s /etc/poetry/bin/poetry && \
@@ -16,4 +21,8 @@ RUN bash -c "poetry install --no-root --no-dev"
 
 COPY . /app
 
-RUN python /app/main.py
+RUN chmod +x /tmp/generate-certificate.sh
+
+RUN bash -c "/tmp/generate-certificate.sh"
+
+CMD [ "python", "app/main.py" ]

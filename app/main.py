@@ -1,21 +1,19 @@
-import secrets
 import asyncio
-import string
 import signal
+import ssl
 
 import uvloop
-from gmqtt import Client, Subscription
+from gmqtt import Subscription
 from httpx import URL
 
-from utils import get_random_string
+from utils import get_client
 from api import get_temperature, get_stations_temperature, get_api_info
-from callbacks import assign_callbacks_to_client
 
 TEMPERATURE_API = "https://api.data.gov.sg/v1/environment/air-temperature"
 STATION_IDS = ("S50", "S107", "S60")
 
 BROKER_HOST = "test.mosquitto.org"
-BROKER_PORT = "1883"  # "8885"
+BROKER_PORT = "8885"
 
 API_STR = "/api"
 
@@ -28,14 +26,19 @@ def ask_exit(*args):
     STOP.set()
 
 
-async def main(broker_host: URL, broker_port: str, token: str):
-    # Client which publicate messages
-    sub_client = Client(
-        await get_random_string(6, string.ascii_letters + string.digits)
+async def main(broker_host: URL, broker_port: str):
+    ssl_context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+    ssl_context.load_cert_chain("client.crt", "client.key")
+    ssl_context.check_hostname = False
+
+    # Client which recive messages
+    sub_client = await get_client(
+        username="ro",
+        password="readonly",
+        broker_host=broker_host,
+        broker_port=broker_port,
+        ssl_cntxt=ssl_context,
     )
-    assign_callbacks_to_client(sub_client)
-    # sub_client.set_auth_credentials(token, None)
-    await sub_client.connect(broker_host, broker_port, ssl=False)
     sub_client.subscribe(
         [
             Subscription(f"{API_STR}/status"),
@@ -43,13 +46,14 @@ async def main(broker_host: URL, broker_port: str, token: str):
         ]
     )
 
-    # Client which recieve messages
-    pub_client = Client(
-        await get_random_string(6, string.ascii_letters + string.digits)
+    # Client which publicate messages
+    pub_client = await get_client(
+        username="wo",
+        password="writeonly",
+        broker_host=broker_host,
+        broker_port=broker_port,
+        ssl_cntxt=ssl_context,
     )
-    assign_callbacks_to_client(pub_client)
-    # pub_client.set_auth_credentials(token, None)
-    await pub_client.connect(broker_host, broker_port, ssl=False)
 
     temperature_data = await get_temperature(TEMPERATURE_API)
     stations_temerature = await get_stations_temperature(
@@ -70,8 +74,7 @@ async def main(broker_host: URL, broker_port: str, token: str):
 
 
 if __name__ == "__main__":
-    token = secrets.token_urlsafe(16)
     loop = asyncio.get_event_loop()
     loop.add_signal_handler(signal.SIGINT, ask_exit)
     loop.add_signal_handler(signal.SIGTERM, ask_exit)
-    loop.run_until_complete(main(BROKER_HOST, BROKER_PORT, token))
+    loop.run_until_complete(main(BROKER_HOST, BROKER_PORT))
