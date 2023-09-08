@@ -17,7 +17,7 @@ async def get_temperature(url: URL) -> dict[str, Any]:
 
 
 async def get_stations_temperature(
-    stations: set[str], response: dict[str, Any]
+    stations: tuple[str], response: dict[str, Any]
 ) -> list[dict[str, Any]]:
     """Get temperature for stations from STATION_ID list"""
 
