@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "temperature"
+version = "0.1.0"
+description = ""
+authors = ["sanek <alexandr.panteleev2000@gmail.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+gmqtt = "^0.6.12"
+httpx = "^0.24.1"
+uvloop = "^0.17.0"
+
+
+[tool.poetry.group.dev.dependencies]
+ruff = "^0.0.287"
+black = "^23.7.0"
+pytest = "^7.4.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 79
+
+[tool.black]
+line-length = 79
